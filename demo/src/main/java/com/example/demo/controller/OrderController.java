@@ -24,6 +24,6 @@ public class OrderController {
     @RequestMapping("/order/index")
     public String index() {
         logger.info("accessing /order/index");
-        return "index " + port + " " + UUID.randomUUID().toString();
+        return "hello world " + port + " " + UUID.randomUUID().toString();
     }
 }
