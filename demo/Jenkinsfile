@@ -1,0 +1,37 @@
+pipeline {
+    agent any
+    tools {
+        maven 'maven'
+    }
+    stages {
+        stage('pull code') {
+            steps {
+                echo 'main branch staring......'
+                git branch: 'main', url: 'https://github.com/stanxwy/MyTestRepo.git'
+            }
+        }
+        stage('build') {
+            steps {
+                echo 'building......'
+                sh '''
+                    pwd
+                    ls -lht
+                    cd demo
+                    mvn --version
+                    mvn clean package
+                '''
+            }
+        }
+        stage('deploy') {
+            steps {
+                echo 'cleaning up......'
+                sshPublisher(publishers: [sshPublisherDesc(configName: 'DockerJar', transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: '''rm -rf /home/ubuntu/workspace
+                docker stop demo
+                docker rm demo''', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: '', remoteDirectorySDF: false, removePrefix: '', sourceFiles: '')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
+
+                echo 'deploying......'
+                sshPublisher(publishers: [sshPublisherDesc(configName: 'DockerJar', transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: 'docker run -d -p 6002:6001 --name demo -v /home/ubuntu/workspace/demo-0.0.1-SNAPSHOT.jar:/app.jar  openjdk:17 java -jar app.jar', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: 'workspace', remoteDirectorySDF: false, removePrefix: 'demo/target', sourceFiles: '**/demo*.jar')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
+            }
+        }
+    }
+}
